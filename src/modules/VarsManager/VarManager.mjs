@@ -1,3 +1,5 @@
+import boolNames from "../../common/variableNames/boolNames.mjs";
+
 const BITS_PER_TYPED_ARRAY_ELEMENT = 32; //from "./BITS_PER_TYPED_ARRAY_ELEMENT.mjs";
 
 class VarManager
@@ -29,12 +31,17 @@ class VarManager
         {
             lastIdxAllowed = arrayLength[kind].length;
 
-            console.log("CREATING", lastIdxAllowed, arrayLength[kind].length, "CEIL:", Math.ceil(arrayLength[kind].length * varSize / BITS_PER_TYPED_ARRAY_ELEMENT))
+            console.log("CREATING", lastIdxAllowed, arrayLength[kind].length, "CEIL:", Math.ceil(arrayLength[kind].length * varSize / BITS_PER_TYPED_ARRAY_ELEMENT));
+
             arrayLength = Math.ceil(arrayLength[kind].length * varSize / BITS_PER_TYPED_ARRAY_ELEMENT);
 
         }
 
         const typedArray = new Uint32Array(arrayLength);
+
+        console.log(`%cQUE arrayLength: ${arrayLength}, %clastIDXallowed: ${lastIdxAllowed}`, "background-color: #337;", "background-color: #377;");
+
+        lastIdxAllowed -= 1;
 
         return {varSize, varsPerElement, bitmask, typedArray, /*coords,*/ isBool: kind === 0, maximumCapacity: varsPerElement * arrayLength, lastIdxAllowed};
     }
@@ -64,11 +71,10 @@ class VarManager
 
         console.log("CHECK", varIdx, container.lastIdxAllowed);
 
-        console.log(varIdx < container.lastIdxAllowed ? "OOOOOOOOOOOOOOOOOOOOK":"SSFORATO!");
-        if (varIdx >= container.lastIdxAllowed || varIdx < 0)
+        console.log(container.lastIdxAllowed < varIdx? "SFORATO!":"Ooook!");
+        if (container.lastIdxAllowed < varIdx || varIdx < 0)
         {
-            console.clear()
-            return console.error("NEW OUT OF RANGE!")
+            return console.error(`NEW OUT OF RANGE! [Trying to write: varIdx ${varIdx}, but the lastIdxAllowed is ${container.lastIdxAllowed}. MaxCapacity: ${container.maximumCapacity}]`);
         }
 
         // calc coords:
@@ -88,10 +94,10 @@ class VarManager
                 x = varIdx - (y * varsPerElement);
             }
         }
-        else
-        {
-            return console.error(`Variable index (${varIdx}) out of range! [maxVarsPerElement: ${container.varsPerElement}, container: ${container.maximumCapacity}, maximumCapacity: ${container.maximumCapacity}]`);
-        }
+        // else
+        // {
+        //     return console.error(`Variable index (${varIdx}) out of range! [maxVarsPerElement: ${container.varsPerElement}, container: ${container.maximumCapacity}, maximumCapacity: ${container.maximumCapacity}]`);
+        // }
 
         // Now we have our x/y coords!
 
@@ -225,6 +231,6 @@ class VarManager
     }
 }
 
-VarManager.initialize([ ["b1", "b2", "b3"], new Array(18).fill(null), new Array(17).fill(null), [...'ABC']]);
+VarManager.initialize([ boolNames, boolNames, new Array(17).fill(null), [...'ABCDEFGHI']]);
 
 export default VarManager;

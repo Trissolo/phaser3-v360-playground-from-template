@@ -1,5 +1,8 @@
 import Phaser from "phaser";
 
+//temp
+import boolNames from "../common/variableNames/boolNames.mjs";
+
 import VarManager from "../modules/VarsManager/VarManager.mjs";
 
 export default class VariablesTest extends Phaser.Scene
@@ -76,19 +79,17 @@ export default class VariablesTest extends Phaser.Scene
 
       // this.toggleBit(0, 14);
 
-
       this.text.setText([
-          `TEST CLICK`,
-          `TEMPVARIDX: ${this.tempVarIdx} - KIND ${kind}, Max: ${currContainer.maximumCapacity}\nLen: ${currTypedArray.length}\nmaxIDXAllowed: ${currContainer.lastIdxAllowed}`,
-          `\n${0}`,
-          `${this.vToString(currTypedArray[0])}`,
-          `\n${1}`,
-          currTypedArray[1]? `${this.vToString(currTypedArray[1])}`:""//,
-         // `\n[${2}]`//,
-          //`${this.vToString(currTypedArray[2])}`
-      ]);
+        `TEST CLICK`,
+        `TEMPVARIDX: ${this.tempVarIdx} - KIND ${kind}, Max: ${currContainer.maximumCapacity}\nLen: ${currTypedArray.length}\nmaxIDXAllowed: ${currContainer.lastIdxAllowed}`]);
 
-      this.setVar(kind, this.tempVarIdx, 0);
+      for (let [i, val] of currTypedArray.entries())
+      {
+        this.text.text +=`\n(${i}\n${this.vToString(val)}\n`;
+      }
+
+      // this.setVar(kind, this.tempVarIdx, 0);
+
       this.tempVarIdx++;
   }
 
@@ -112,6 +113,6 @@ export default class VariablesTest extends Phaser.Scene
       }
         
       this.cache.bitmapFont.add('bitsy', Phaser.GameObjects.RetroFont.Parse(this, config));
-      return this.add.bitmapText(this.offset, 16, 'bitsy', '0'.repeat(32)+"]").setOrigin(0);
+      return this.add.bitmapText(this.offset, 0, 'bitsy', '0'.repeat(32)+"]").setOrigin(0);
     }
 }
