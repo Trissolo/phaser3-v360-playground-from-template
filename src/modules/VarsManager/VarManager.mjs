@@ -1,15 +1,16 @@
-import boolNames from "../../common/variableNames/boolNames.mjs";
-
-const BITS_PER_TYPED_ARRAY_ELEMENT = 32; //from "./BITS_PER_TYPED_ARRAY_ELEMENT.mjs";
+import varNamesArray from "../../common/variableNames/varNamesArray.mjs";
 
 class VarManager
 {
     // Variable containers
     static varContainers = new Map();
 
+    static BITS_PER_TYPED_ARRAY_ELEMENT = 32;
+
     static createByKind(kind, arrayLength = 2)
     {
         // we are using an Uint32Array
+        const {BITS_PER_TYPED_ARRAY_ELEMENT} = this;
         
         // the size (in bits) of this kind of variable:
         // BOOL = 1 bit [0-1],
@@ -25,31 +26,31 @@ class VarManager
         // bitmask to extract/work on the variable
         const bitmask = (1 << varSize) - 1;
 
-        let lastIdxAllowed = arrayLength;
+        let lastIdxAllowed; // = arrayLength;
 
         if (Array.isArray(arrayLength))
         {
             lastIdxAllowed = arrayLength[kind].length;
 
-            console.log("CREATING", lastIdxAllowed, arrayLength[kind].length, "CEIL:", Math.ceil(arrayLength[kind].length * varSize / BITS_PER_TYPED_ARRAY_ELEMENT));
-
             arrayLength = Math.ceil(arrayLength[kind].length * varSize / BITS_PER_TYPED_ARRAY_ELEMENT);
 
+        }
+        else
+        {
+            lastIdxAllowed = arrayLength * varsPerElement;
         }
 
         const typedArray = new Uint32Array(arrayLength);
 
-        console.log(`%cQUE arrayLength: ${arrayLength}, %clastIDXallowed: ${lastIdxAllowed}`, "background-color: #337;", "background-color: #377;");
-
         lastIdxAllowed -= 1;
 
-        return {varSize, varsPerElement, bitmask, typedArray, /*coords,*/ isBool: kind === 0, maximumCapacity: varsPerElement * arrayLength, lastIdxAllowed};
+        return {varSize, varsPerElement, bitmask, typedArray, isBool: kind === 0, lastIdxAllowed}; // , maximumCapacity: varsPerElement * arrayLength*/ };
     }
 
     // sort of constructor
     static initialize(arrayOfStringArray)
     {      
-        console.log("Variable Manager: INITIALIZE SimpleVarManager");
+        console.log("Variable Manager: INITIALIZE VarManager");
 
         // kind/key(containerIdx)|     varSize     |varsPerElement|bitmask
         // ----------------------|-----------------|--------------|-------
@@ -69,12 +70,11 @@ class VarManager
     {
         const container = this.varContainers.get(kind);
 
-        console.log("CHECK", varIdx, container.lastIdxAllowed);
+        // Quick check
 
-        console.log(container.lastIdxAllowed < varIdx? "SFORATO!":"Ooook!");
-        if (container.lastIdxAllowed < varIdx || varIdx < 0)
+        if (container.lastIdxAllowed < varIdx) // || varIdx < 0)
         {
-            return console.error(`NEW OUT OF RANGE! [Trying to write: varIdx ${varIdx}, but the lastIdxAllowed is ${container.lastIdxAllowed}. MaxCapacity: ${container.maximumCapacity}]`);
+            return console.error(`Variable OUT OF RANGE! [Trying to write at idx ${varIdx}, but lastIdxAllowed is ${container.lastIdxAllowed}.`);
         }
 
         // calc coords:
@@ -82,8 +82,6 @@ class VarManager
         let x = 0;
         let y = 0;
 
-        if (varIdx >= 0 && varIdx < container.maximumCapacity)
-        {
             if (varIdx < varsPerElement)
             {
                 x = varIdx;
@@ -93,37 +91,39 @@ class VarManager
                 y = Math.floor(varIdx / varsPerElement);
                 x = varIdx - (y * varsPerElement);
             }
-        }
-        // else
-        // {
-        //     return console.error(`Variable index (${varIdx}) out of range! [maxVarsPerElement: ${container.varsPerElement}, container: ${container.maximumCapacity}, maximumCapacity: ${container.maximumCapacity}]`);
-        // }
 
         // Now we have our x/y coords!
 
-        // we will use the amount of arguments to determine the action to take (maybe for calling mapped functions):
-        //this[arguments.lengt]();
+        // MEMO: we canl use the amount of arguments to determine the action to take (maybe for calling mapped functions):
+        //
+        // this[arguments.lengt]();
         // 2 = read variable,
         // 3 = set variable,
         // 4 = toggle 1 bit (only in case of BOOL).
 
         // hmmm :/
-        let argLength = arguments.length;
+        // const argLength = arguments.length;
 
-        //set:
-        // first: clear!
+        // set the variable?
+
         // if (typeof newValue === 'number')
-        if (argLength === 3)
+        if (arguments.length === 3)
         {
+            // Do we need to check the validity of "newValue", here?
+            if (newValue < 0 || newValue > container.bitmask)
+            {
+                console.warn(`Wrong value (attempting ${newValue}, but valdid values must be between 0 and ${container.bitmask})`);
+            }
+
+            // first: clear!
             typedArray[y] &= ~(container.bitmask << x * container.varSize);
-    
+            
             if (newValue === 0)
             {
                 return 0;
             }
             else
             {
-                // Do we need to check the validity of "newValue", here?
     
                 typedArray[y] |= (newValue << x * container.varSize);
     
@@ -132,9 +132,8 @@ class VarManager
             }
         }
 
-        // toggle bit
-        // if (toggleBit && container.isBool)
-        if (argLength === 4 && container.isBool)
+        // toggle bit?
+        if (toggleBit && container.isBool)  // if (argLength === 4 && container.isBool)
         {
             typedArray[y] ^= (1 << x);
         }
@@ -143,94 +142,38 @@ class VarManager
         return container.isBool? (typedArray[y] >>> x) & 1 :  (typedArray[y] >>> x * container.varSize) & container.bitmask;
     }
 
-    static handleAny(kind, varIdx, newValue, toggle)
-    {
-        const container = this.varContainers.get(kind);
-
-        // calc coords:
-        const {varsPerElement, typedArray} = container;
-        let x = 0;
-        let y = 0;
-
-        if (varIdx >= 0 && varIdx < container.maximumCapacity)
-        {
-            if (varIdx < varsPerElement)
-            {
-                x = varIdx;
-            }
-            else
-            {
-                y = Math.floor(varIdx / varsPerElement);
-                x = varIdx - (y * varsPerElement);
-            }
-        }
-        else
-        {
-            return console.error(`Variable index (${varIdx}) out of range! [maxVarsPerElement: ${container.varsPerElement}, container: ${container.maximumCapacity}, maximumCapacity: ${container.maximumCapacity}]`);
-        }
-
-        //if no 'newValue', then just read on
-        if (newValue === undefined)
-        {
-            console.log("READING VALUE", arguments.length);
-
-            return container.isBool? (typedArray[y] >>> x) & 1 :  (typedArray[y] >>> x * container.varSize) & container.bitmask;
-        }
-        else
-        {
-            console.log("SETTING VALUE", arguments.length);
-
-            // first: clear!
-            typedArray[y] &= ~(container.bitmask << x * container.varSize);
-
-            if (newValue === 0)
-            {
-                console.log("JUST CLEARED");
-
-                return 0;
-            }
-            else
-            {
-                // Do we need to check the validity of "newValue", here?
-
-                typedArray[y] |= (newValue << x * container.varSize);
-
-                console.log(newValue);
-
-                return newValue;
-            }
-        }
-    }
-
-    static betterGetXY()
+    // not yet used
+    static betterGetXY(kind, varIdx)
     {
         const container = this.varContainers.get(kind);
 
         const {varsPerElement} = container;
+
+        if (container.lastIdxAllowed < varIdx)
+        {
+            return console.error(`Variable index is OUT OF RANGE! [Trying to write at idx ${varIdx}, but lastIdxAllowed is ${container.lastIdxAllowed}.`);
+        }
+
         let x = 0;
         let y = 0;
 
-        if (varIdx >= 0 && varIdx < container.maximumCapacity)
+        if (varIdx < varsPerElement)
         {
-            if (varIdx < varsPerElement)
-            {
-                x = varIdx;
-            }
-            else
-            {
-                y = Math.floor(varIdx / varsPerElement);
-                x = varIdx - (y * varsPerElement);
-            }
-
-            return {x, y, container}
+            x = varIdx;
         }
         else
         {
-            return console.error(`Variable index (${varIdx}) out of range! [maxVarsPerElement: ${container.varsPerElement}, container: ${container.maximumCapacity}, maximumCapacity: ${container.maximumCapacity}]`);
+            y = Math.floor(varIdx / varsPerElement);
+            x = varIdx - (y * varsPerElement);
         }
+
+        return {x, y, container};
+        
     }
+
+    
 }
 
-VarManager.initialize([ boolNames, boolNames, new Array(17).fill(null), [...'ABCDEFGHI']]);
+VarManager.initialize(varNamesArray);
 
 export default VarManager;

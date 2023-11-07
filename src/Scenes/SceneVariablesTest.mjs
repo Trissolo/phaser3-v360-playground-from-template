@@ -1,14 +1,14 @@
 import Phaser from "phaser";
 
 //temp
-import boolNames from "../common/variableNames/boolNames.mjs";
+import varNamesArray from "../common/variableNames/varNamesArray.mjs";
 
 import VarManager from "../modules/VarsManager/VarManager.mjs";
 
-export default class VariablesTest extends Phaser.Scene
+export default class SceneVariablesTest extends Phaser.Scene
 {
   offset = 2;
-  tempVarIdx = 0;
+  tempVarIdx = -1;
   vars = VarManager;
 
     constructor()
@@ -46,6 +46,20 @@ export default class VariablesTest extends Phaser.Scene
 
         this.input.on('pointerdown', this.testVarsOnClick, this);
 
+        // this.testVarsOnClick();
+
+        // // quick test;
+        // const knd = 2;
+
+        // const cont = this.vars.varContainers.get(knd);
+
+        // //some value
+        // const numb = 564644654
+        // cont.typedArray[0] = numb;
+
+        // const res = this.readVar(knd, 7);
+        // console.log(`All: ${this.vToString(numb)}\nRES: ${this.vToString(res, cont.varSize)}`);
+
     }
 
     // Don't forget these three methods (readVar, setVar, toggleBit)!
@@ -59,7 +73,7 @@ export default class VariablesTest extends Phaser.Scene
         return this.vars.newHandleAny(kind, varIdx, newValue);
     }
 
-    toggleBit(kind, varIdx)
+    toggleBit(varIdx, kind = 0)
     {
       return this.vars.newHandleAny(kind, varIdx, null, true);
     }
@@ -67,30 +81,41 @@ export default class VariablesTest extends Phaser.Scene
 
   testVarsOnClick(pointer)
   {
-      const kind = 3;
+    // the container:
+    const kind = 3;
 
-      const currContainer = this.vars.varContainers.get(kind);
+    const currContainer = this.vars.varContainers.get(kind);
 
-      const currTypedArray = currContainer.typedArray;
+    const currTypedArray = currContainer.typedArray;
 
-      console.log("CONTAINER", currContainer);
+    //then: increment!
+    this.tempVarIdx += 1;
 
-      console.log("Setting VALUE:", this.setVar(kind, this.tempVarIdx, currContainer.bitmask), currTypedArray);
+    if (this.tempVarIdx > currContainer.lastIdxAllowed)
+    {
+      this.tempVarIdx = currContainer.lastIdxAllowed;
 
-      // this.toggleBit(0, 14);
+      this.cameras.main.setBackgroundColor(0x402510);
+    }
 
-      this.text.setText([
-        `TEST CLICK`,
-        `TEMPVARIDX: ${this.tempVarIdx} - KIND ${kind}, Max: ${currContainer.maximumCapacity}\nLen: ${currTypedArray.length}\nmaxIDXAllowed: ${currContainer.lastIdxAllowed}`]);
+    //test toggle
+    this.toggleBit(this.tempVarIdx < 32? 30:40);
+    
+    // console.dir(currContainer);
+    
+    const {x, y} =  this.vars.betterGetXY(kind, this.tempVarIdx) ?? {x:0, y:currTypedArray.length - 1}
+    
+    this.setVar(kind, this.tempVarIdx, currContainer.bitmask);
 
-      for (let [i, val] of currTypedArray.entries())
-      {
-        this.text.text +=`\n(${i}\n${this.vToString(val)}\n`;
-      }
-
-      // this.setVar(kind, this.tempVarIdx, 0);
-
-      this.tempVarIdx++;
+    this.text.setText([
+      `Var Idx: ${this.tempVarIdx}`,
+      `maxIDXAllowed: ${currContainer.lastIdxAllowed}`,
+      `Name: ${varNamesArray[kind][this.tempVarIdx]}`,
+      // `Max: ${currContainer.maximumCapacity}`,
+      `Len: ${currTypedArray.length}`,
+      `\nAry[${y}][${x}]\n${this.vToString(/*currTypedArray[0])}`//*/y!==null?currTypedArray[y]:currTypedArray[currTypedArray.length - 1])}`
+    ]);
+   
   }
 
   vToString(num, tot = 32) // kind = 0, y = 0, cont = this.varsManager.varContainers.get(kind))
@@ -113,6 +138,6 @@ export default class VariablesTest extends Phaser.Scene
       }
         
       this.cache.bitmapFont.add('bitsy', Phaser.GameObjects.RetroFont.Parse(this, config));
-      return this.add.bitmapText(this.offset, 0, 'bitsy', '0'.repeat(32)+"]").setOrigin(0);
+      return this.add.bitmapText(this.offset, this.offset, 'bitsy', '0'.repeat(32)+"]").setOrigin(0);
     }
 }
