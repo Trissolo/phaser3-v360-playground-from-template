@@ -66,7 +66,7 @@ class VarManager
         
     }  // end Initialize
 
-    static newHandleAny(kind, varIdx, newValue, toggleBit)
+    static handleVar(kind, varIdx, newValue, toggleBit)
     {
         const container = this.varContainers.get(kind);
 
@@ -94,15 +94,17 @@ class VarManager
 
         // Now we have our x/y coords!
 
-        // MEMO: we canl use the amount of arguments to determine the action to take (maybe for calling mapped functions):
+        // (
+        //   FUTURE?: we can use the amount of arguments to determine the action to take (maybe for calling mapped functions):
         //
-        // this[arguments.lengt]();
-        // 2 = read variable,
-        // 3 = set variable,
-        // 4 = toggle 1 bit (only in case of BOOL).
-
-        // hmmm :/
-        // const argLength = arguments.length;
+        //   this[arguments.lengt]();
+        //   2 = read variable,
+        //   3 = set variable,
+        //   4 = toggle 1 bit (only in case of BOOL).
+        //
+        //   hmmm :/
+        //   const argLength = arguments.length;
+        // )
 
         // set the variable?
 
@@ -127,7 +129,6 @@ class VarManager
     
                 typedArray[y] |= (newValue << x * container.varSize);
     
-    
                 return newValue;
             }
         }
@@ -142,6 +143,7 @@ class VarManager
         return container.isBool? (typedArray[y] >>> x) & 1 :  (typedArray[y] >>> x * container.varSize) & container.bitmask;
     }
 
+    
     // not yet used
     static betterGetXY(kind, varIdx)
     {
@@ -167,11 +169,24 @@ class VarManager
             x = varIdx - (y * varsPerElement);
         }
 
-        return {x, y, container};
-        
+        return {x, y, container};   
     }
 
-    
+    static readVar(kind, varIdx)
+    {
+        return this.handleVar(kind, varIdx);
+    }
+
+    static setVar(kind, varIdx, newValue)
+    {
+        return this.handleVar(kind, varIdx, newValue);
+    }
+
+    static toggleBit(varIdx, kind = 0)
+    {
+      return this.handleVar(kind, varIdx, null, true);
+    }
+   
 }
 
 VarManager.initialize(varNamesArray);
