@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import logoImg from './assets/logo.png';
 import SceneVariablesTest from './Scenes/SceneVariablesTest.mjs';
 
+import SceneBase from './Scenes/SceneBase.mjs';
+
 // class MyGame extends Phaser.Scene
 // {
 //     constructor ()
@@ -49,7 +51,7 @@ const config = {
         height: 200,
         zoom: 3
     },
-    scene: SceneVariablesTest
+    scene: SceneBase // SceneVariablesTest
 };
 
 const game = new Phaser.Game(config);
