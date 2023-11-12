@@ -15,7 +15,7 @@ export default class SceneVariablesTest extends Phaser.Scene
     {
         super({
               key: 'Viewscreen',
-              active: false,
+              active: true,
               visible: false,
               plugins: [
                 'Clock',  //this.time
@@ -27,10 +27,20 @@ export default class SceneVariablesTest extends Phaser.Scene
                 ],
               cameras:
               {
-                backgroundColor: "#252",
-                height: 128
+                backgroundColor: "#252"//,
+                //height: 128
               }
             })
+    }
+
+    init()
+    {
+        console.log('init', this.sys.settings.key);
+        this.events.once('create', () => {
+            
+            console.log("on create", this.sys.settings.key, this.scene.getStatus(this));
+                
+        });      
     }
 
     preload()
@@ -41,13 +51,21 @@ export default class SceneVariablesTest extends Phaser.Scene
     create()
     {
         // this.add.image(0, 0, 'background').setOrigin(0).setAlpha(.7);
+        this.secondScene = this.scene.get('SceneB');
 
         this.text = this.buildBmFont();
 
-        this.input.on('pointerdown', this.testVarsOnClick, this);
+        this.ima = this.add.image(20,10,'__WHITE')
+          .setInteractive()
+          .on('pointerdown', this.imAclicked)
+          .setScale(4)
+          .setTintFill(0xff66ff)
+          .setOrigin(0);
+
+        // this.input.on('pointerdown', this.testVarsOnClick, this);
 
         //dp
-        this.vars.varContainers.get(0).typedArray[0] = 0xffffffff;
+        // this.vars.varContainers.get(0).typedArray[0] = 0xffffffff;
 
         // this.testVarsOnClick();
 
@@ -62,6 +80,21 @@ export default class SceneVariablesTest extends Phaser.Scene
 
         // const res = this.readVar(knd, 7);
         // console.log(`All: ${this.vToString(numb)}\nRES: ${this.vToString(res, cont.varSize)}`);
+
+    }
+
+    imAclicked()
+    {
+      console.log("image 'A' clicked", this.scene.secondScene, this.scene);
+      const secSce = this.scene.secondScene;
+      secSce.add.text(10,10,"secondScene");
+      secSce.cameras.main.setViewport(100, 12, 126, 100).setBackgroundColor(0x669944);
+      secSce.scene.wake(secSce);
+      // console.log("secSce ORCO", secSce); //.isSleeping);
+      // //secSce.text.setText('Set by first scene');
+      // secSce.scene.wake(secSce);
+      // secSce.cameras.main.setBackgroundColor("#ff6");
+      // console.log("getStatus", secSce.scene.getStatus(secSce))
 
     }
 
